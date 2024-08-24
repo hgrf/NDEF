@@ -56,12 +56,12 @@ NfcTag MifareUltralight::read()
             return NfcTag(nfc->uid.uidByte, nfc->uid.size, NfcTag::TYPE_2);
         }
 
+        index += ULTRALIGHT_READ_SIZE;
+
         if (index >= (messageLength + ndefStartIndex))
         {
             break;
         }
-
-        index += ULTRALIGHT_READ_SIZE;
     }
 
     return NfcTag(nfc->uid.uidByte, nfc->uid.size, NfcTag::TYPE_2, &buffer[ndefStartIndex], messageLength);
