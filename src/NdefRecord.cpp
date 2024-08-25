@@ -277,6 +277,53 @@ void NdefRecord::setId(const byte *id, const unsigned int numBytes)
     memcpy(_id, id, numBytes);
     _idLength = numBytes;
 }
+
+// c.f. https://www.oreilly.com/library/view/beginning-nfc/9781449324094/ch04.html
+// c.f. https://www.oreilly.com/library/view/beginning-nfc/9781449324094/apa.html
+String NdefRecord::asUri()
+{
+    if (_tnf != TNF_WELL_KNOWN)
+    {
+        return String();
+    }
+
+    if (_typeLength < 1)
+    {
+        return String();
+    }
+
+    if (_type[0] != RTD_URI)
+    {
+        return String();
+    }
+
+    if (_payloadLength < 1)
+    {
+        return String();
+    }
+
+    String uriPrefixes[] = {
+        "", "http://www.", "https://www.", "http://", "https://", "tel:", // ... to be completed
+    };
+
+    if (_payload[0] >= sizeof(uriPrefixes) / sizeof(uriPrefixes[0]))
+    {
+        return String();
+    }
+
+    String uri = uriPrefixes[_payload[0]];
+    for (unsigned int i = 1; i < _payloadLength; i++)
+    {
+        if (_payload[i] < 0x20 || _payload[i] > 0x7E)
+        {
+            return String();
+        }
+        uri += (char)_payload[i];
+    }
+
+    return uri;
+}
+
 #ifdef NDEF_USE_SERIAL
 
 void NdefRecord::print()

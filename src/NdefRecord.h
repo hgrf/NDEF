@@ -35,6 +35,8 @@ class NdefRecord
         void setPayload(const byte *header, const int headerLength, const byte *payload, const int payloadLength);
         void setId(const byte *id, const unsigned int numBytes);
 
+        String asUri();
+
 #ifdef NDEF_USE_SERIAL
         void print();
 #endif
