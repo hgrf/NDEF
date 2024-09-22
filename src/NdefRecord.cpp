@@ -284,41 +284,70 @@ String NdefRecord::asUri()
 {
     if (_tnf != TNF_WELL_KNOWN)
     {
+        Console.println(F("NdefRecord::asUri not a TNF_WELL_KNOWN"));
         return String();
     }
 
     if (_typeLength < 1)
     {
+        Console.println(F("NdefRecord::asUri typeLength < 1"));
         return String();
     }
 
-    if (_type[0] != RTD_URI)
+    if (_type[0] != RTD_URI && _type[0] != RTD_SMART_POSTER)
     {
+        Console.print(F("NdefRecord::asUri not RTD_URI or RTD_SMART_POSTER: "));
+        Console.println((int) _type[0]);
         return String();
     }
 
     if (_payloadLength < 1)
     {
+        Console.println(F("NdefRecord::asUri payloadLength < 1"));
         return String();
     }
 
-    String uriPrefixes[] = {
-        "", "http://www.", "https://www.", "http://", "https://", "tel:", // ... to be completed
-    };
+    String uri;
+    if (_type[0] == RTD_URI) {
+        String uriPrefixes[] = {
+            "", "http://www.", "https://www.", "http://", "https://", "tel:", // ... to be completed
+        };
 
-    if (_payload[0] >= sizeof(uriPrefixes) / sizeof(uriPrefixes[0]))
-    {
-        return String();
-    }
-
-    String uri = uriPrefixes[_payload[0]];
-    for (unsigned int i = 1; i < _payloadLength; i++)
-    {
-        if (_payload[i] < 0x20 || _payload[i] > 0x7E)
+        if (_payload[0] >= sizeof(uriPrefixes) / sizeof(uriPrefixes[0]))
         {
+            Console.print(F("NdefRecord::asUri prefix out of range: "));
+            Console.println((int) _payload[0]);
             return String();
         }
-        uri += (char)_payload[i];
+
+        uri += uriPrefixes[_payload[0]];
+        for (unsigned int i = 1; i < _payloadLength; i++)
+        {
+            if (_payload[i] < 0x20 || _payload[i] > 0x7E)
+            {
+                return String();
+            }
+            uri += (char)_payload[i];
+        }
+    } else if (_type[0] == RTD_SMART_POSTER) {
+        // c.f. https://berlin.ccc.de/~starbug/felica/NFCForum-SmartPoster_RTD_1.0.pdf
+        // TODO: check if _type[1] == 'p'
+        // TODO: check if SR or not SR
+        // TODO: confirm record type
+        // TODO: parse abbreviation
+        int uriLength = _payload[2];
+        Console.print(F("NdefRecord::asUri uriLength: "));
+        Console.println(uriLength);
+        for (unsigned int i = 5; i < 5 + uriLength - 1; i++)
+        {
+            if (_payload[i] < 0x20 || _payload[i] > 0x7E)
+            {
+                Console.print(F("NdefRecord::asUri invalid character: "));
+                Console.println((int) _payload[i]);
+                return String();
+            }
+            uri += (char)_payload[i];
+        }
     }
 
     return uri;
